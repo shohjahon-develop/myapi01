@@ -17,3 +17,6 @@ admin.site.register(AboutAccountant)
 
 # admin username myapi01
 # password = password2006
+
+# pythonanywhere code = mypai012006
+# pythonanywhere username = myapi01

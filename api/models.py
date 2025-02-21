@@ -26,7 +26,6 @@ class AboutAccountant(models.Model):
     certifications = models.TextField(blank=True, null=True)
     skills = models.TextField()
     languages = models.TextField()
-    contact_info = models.TextField()
     bio = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -108,7 +107,6 @@ class Payment(models.Model):
     PAYMENT_METHODS = [
         ('payme', 'Payme'),
         ('click', 'Click'),
-        ('stripe', 'Stripe'),
         ('paypal', 'PayPal'),
     ]
 

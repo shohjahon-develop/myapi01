@@ -31,9 +31,8 @@ urlpatterns = [
     path('payments/', PaymentListCreateView.as_view(), name='payment_list_create'),
     path('payments/<int:pk>/status/', PaymentStatusUpdateView.as_view(), name='payment_status_update'),
     path('payments/start/', PaymentStartView.as_view(), name='payment_start'),
-    path('payments/callback/payme/', PaymeCallbackView.as_view(), name='payme_callback'),
-    path('payments/callback/click/', ClickCallbackView.as_view(), name='click_callback'),
-    path('payments/callback/stripe/', StripeCallbackView.as_view(), name='stripe_callback'),
+    path('payments/payme/checkout/<int:invoice_id>/', PaymeCheckoutView.as_view(), name='payme_checkout'),
+    path('payments/click/checkout/<int:invoice_id>/', ClickCheckoutView.as_view(), name='click_checkout'),
     path('payments/callback/paypal/', PayPalCallbackView.as_view(), name='paypal_callback'),
     path('payments/<int:pk>/status/', PaymentStatusView.as_view(), name='payment_status'),
 

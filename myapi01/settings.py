@@ -148,3 +148,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Payme va Click to'lov sahifasi uchun URL lar
+PAYME_MERCHANT_ID = "YOUR_PAYME_MERCHANT_ID"
+CLICK_MERCHANT_ID = "YOUR_CLICK_MERCHANT_ID"
+PAYME_URL = "https://checkout.paycom.uz"
+CLICK_URL = "https://my.click.uz/services/pay"

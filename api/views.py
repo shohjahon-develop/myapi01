@@ -12,6 +12,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
+
+from myapi01.settings import PAYME_URL, PAYME_MERCHANT_ID, CLICK_URL, CLICK_MERCHANT_ID
 from .utils import generate_invoice_pdf
 import json
 from datetime import datetime, timedelta
@@ -20,6 +22,7 @@ from reportlab.pdfgen import canvas
 from .models import  *
 from .serializers import *
 from django.contrib.auth import get_user_model
+import openpyxl
 
 User = get_user_model()
 
@@ -208,61 +211,28 @@ class PaymentStartView(generics.GenericAPIView):
             return Response({"error": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class PaymeCallbackView(generics.GenericAPIView):
-    serializer_class = PaymentCallbackSerializer
-    permission_classes = [AllowAny]
+class PaymeCheckoutView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        transaction_id = serializer.validated_data['transaction_id']
-        status = serializer.validated_data['status']
-
+    def get(self, request, invoice_id, *args, **kwargs):
         try:
-            payment = Payment.objects.get(transaction_id=transaction_id, payment_method='payme')
-            payment.status = status
-            payment.save()
-            return Response({"message": "Payme payment status updated."}, status=status.HTTP_200_OK)
-        except Payment.DoesNotExist:
-            return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+            invoice = Invoice.objects.get(id=invoice_id, user=request.user)
+            payme_link = f"{PAYME_URL}/?merchant={PAYME_MERCHANT_ID}&amount={int(invoice.amount * 100)}&account[invoice_id]={invoice.id}"
+            return Response({"payme_link": payme_link}, status=status.HTTP_200_OK)
+        except Invoice.DoesNotExist:
+            return Response({"error": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
 
-class ClickCallbackView(generics.GenericAPIView):
-    serializer_class = PaymentCallbackSerializer
-    permission_classes = [AllowAny]
+class ClickCheckoutView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        transaction_id = serializer.validated_data['transaction_id']
-        status = serializer.validated_data['status']
-
+    def get(self, request, invoice_id, *args, **kwargs):
         try:
-            payment = Payment.objects.get(transaction_id=transaction_id, payment_method='click')
-            payment.status = status
-            payment.save()
-            return Response({"message": "Click payment status updated."}, status=status.HTTP_200_OK)
-        except Payment.DoesNotExist:
-            return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+            invoice = Invoice.objects.get(id=invoice_id, user=request.user)
+            click_link = f"{CLICK_URL}/?service_id={CLICK_MERCHANT_ID}&amount={invoice.amount}&transaction_param={invoice.id}"
+            return Response({"click_link": click_link}, status=status.HTTP_200_OK)
+        except Invoice.DoesNotExist:
+            return Response({"error": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
-
-class StripeCallbackView(generics.GenericAPIView):
-    serializer_class = PaymentCallbackSerializer
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        transaction_id = serializer.validated_data['transaction_id']
-        status = serializer.validated_data['status']
-
-        try:
-            payment = Payment.objects.get(transaction_id=transaction_id, payment_method='stripe')
-            payment.status = status
-            payment.save()
-            return Response({"message": "Stripe payment status updated."}, status=status.HTTP_200_OK)
-        except Payment.DoesNotExist:
-            return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
 
 class PayPalCallbackView(generics.GenericAPIView):
     serializer_class = PaymentCallbackSerializer

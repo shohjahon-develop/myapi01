@@ -135,10 +135,6 @@ class TaxRate(models.Model):
 
 
 
-# salom hammaga men cradev companiyasidan Mamajonov Shohjaxon
-# Backend Dasturchiman va ayni damada Online bugalteria xizmatlar web sayti uchun api yozyapman
-# yaqin haftalar ichida web saytni deploying va test qismi tugab o'zmijozlariga xizmat ko'satishni boshlaydi.
-
 
 
 

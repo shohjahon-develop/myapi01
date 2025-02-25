@@ -9,6 +9,13 @@ router.register(r'xizmatlar', XizmatlarViewSet)
 router.register(r'narxlar', NarxlarViewSet)
 router.register(r'about',AboutViewSet)
 router.register(r'aboutAccountant',AboutAccountantViewSet)
+router.register(r'experiences', ExperienceViewSet)
+router.register(r'reference', ReferenceViewSet)
+router.register(r'reference_request', ReferenceRequestViewSet)
+router.register(r'chatrooms', ChatRoomViewSet)
+router.register(r'messages', MessageViewSet)
+router.register(r'notifications', NotificationViewSet)
+router.register(r'requests', RequestViewSet)
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -26,6 +33,7 @@ urlpatterns = [
     path('invoices/', InvoiceListCreateView.as_view(), name='invoice_list_create'),
     path('invoices/<int:pk>/', InvoiceDetailView.as_view(), name='invoice_detail'),
     path('invoices/<int:pk>/export/pdf/', InvoicePDFExportView.as_view(), name='invoice_export_pdf'),
+    path('system-statistics/', SystemStatisticsView.as_view(), name='system_statistics'),
 
     
     path('payments/', PaymentListCreateView.as_view(), name='payment_list_create'),

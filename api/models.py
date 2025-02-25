@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -33,6 +34,35 @@ class AboutAccountant(models.Model):
         return self.accountant.username
 
 
+class Experience(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    company = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    currently_working = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.end_date and self.start_date and self.end_date < self.start_date:
+            raise ValueError("End date must be after start date")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.title} at {self.company}"
+
+
+
+class ReferenceRequest(models.Model):
+    sender = models.ForeignKey(User, related_name='sent_requests', on_delete=models.CASCADE)
+    recipient = models.EmailField()
+    message = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=False)
+
+class Reference(models.Model):
+    request = models.OneToOneField(ReferenceRequest, on_delete=models.CASCADE)
+    feedback = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 
@@ -131,10 +161,57 @@ class TaxRate(models.Model):
 
 
 
+User = get_user_model()
+
+class ChatRoom(models.Model):
+    name = models.CharField(max_length=255, blank=True, null=True)
+    participants = models.ManyToManyField(User, related_name="chat_rooms")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name or f"Chat {self.id}"
+
+class Message(models.Model):
+    chat = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to="chat_files/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.text[:20] if self.text else 'File uploaded'}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username} - {self.message[:20]}"
 
 
 
 
+class Request(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('completed', 'Completed'),
+        ('rejected', 'Rejected'),
+    ]
+
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name="requests")
+    accountant = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="accepted_requests")
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.status})"
 
 
 

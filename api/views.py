@@ -1,7 +1,13 @@
+from requests.models import Request
+from xml import parsers
+from rest_framework.permissions import IsAdminUser
+from django.contrib.admin import action
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import api_view
+from rest_framework import permissions
+
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -413,21 +419,179 @@ class FinancialReportExcelView(generics.GenericAPIView):
         return response
 
 
+class ExperienceViewSet(viewsets.ModelViewSet):
+    queryset = Experience.objects.all()
+    serializer_class = ExperienceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Experience.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['GET'])
+    def my_experiences(self, request):
+        experiences = self.get_queryset()
+        serializer = self.get_serializer(experiences, many=True)
+        return Response(serializer.data)
+
+
+class ReferenceRequestViewSet(viewsets.ModelViewSet):
+    queryset = ReferenceRequest.objects.all()
+    serializer_class = ReferenceRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
+        reference_request = self.get_object()
+        reference_request.is_accepted = True
+        reference_request.save()
+        return Response({'status': 'Reference request accepted'})
+
+
+class ReferenceViewSet(viewsets.ModelViewSet):
+    queryset = Reference.objects.all()
+    serializer_class = ReferenceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        reference_request = ReferenceRequest.objects.get(id=self.request.data.get('request_id'))
+        if reference_request.is_accepted:
+            serializer.save(request=reference_request)
+        else:
+            return Response({'error': 'Request not accepted yet'}, status=400)
+
+
+
+class ChatRoomViewSet(viewsets.ModelViewSet):
+    queryset = ChatRoom.objects.all()
+    serializer_class = ChatRoomSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(participants=self.request.user)
+
+    def perform_create(self, serializer):
+        chat = serializer.save()
+        chat.participants.add(self.request.user)  # Avtomatik yaratuvchini qo‘shish
+
+
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]  # Fayl yuklash uchun parser
+
+    def get_queryset(self):
+        chat_id = self.request.query_params.get("chat")
+        if chat_id:
+            return self.queryset.filter(chat_id=chat_id).order_by("-created_at")
+        return self.queryset.none()
+
+    def perform_create(self, serializer):
+        chat_id = self.request.data.get("chat")
+        chat = get_object_or_404(ChatRoom, id=chat_id, participants=self.request.user)
+        serializer.save(sender=self.request.user, chat=chat)
+
+
+
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def mark_as_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({"message": "Notification marked as read"})
 
 
 
 
 
+class SystemStatisticsView(APIView):
+    permission_classes = [IsAdminUser]  # Faqat adminlar ko‘ra oladi
+
+    def get(self, request):
+        total_users = User.objects.count()
+        total_clients = User.objects.filter(is_staff=False).count()
+        total_accountants = User.objects.filter(is_staff=True).count()
+
+        total_requests = Request.objects.count()
+        pending_requests = Request.objects.filter(status="pending").count()
+        accepted_requests = Request.objects.filter(status="accepted").count()
+        completed_requests = Request.objects.filter(status="completed").count()
+
+        total_invoices = Invoice.objects.count()
+        paid_invoices = Invoice.objects.filter(status="paid").count()
+        unpaid_invoices = Invoice.objects.filter(status="pending").count()
+
+        return Response({
+            "users": {
+                "total": total_users,
+                "clients": total_clients,
+                "accountants": total_accountants,
+            },
+            "requests": {
+                "total": total_requests,
+                "pending": pending_requests,
+                "accepted": accepted_requests,
+                "completed": completed_requests,
+            },
+            "invoices": {
+                "total": total_invoices,
+                "paid": paid_invoices,
+                "unpaid": unpaid_invoices,
+            }
+        })
 
 
+class RequestViewSet(viewsets.ModelViewSet):
+    queryset = Request.objects.all()
+    serializer_class = RequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return self.queryset.filter(status='pending')  # Buxgalterlar faqat 'pending' so‘rovlarni ko‘radi
+        return self.queryset.filter(client=self.request.user)  # Mijozlar faqat o‘z so‘rovlarini ko‘radi
 
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
 
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
+        request = get_object_or_404(Request, id=pk, status='pending')
+        request.accountant = request.user
+        request.status = 'accepted'
+        request.save()
+        return Response({"message": "So‘rov qabul qilindi", "status": request.status})
 
+    @action(detail=True, methods=['post'])
+    def complete(self, request, pk=None):
+        request = get_object_or_404(Request, id=pk, status='accepted', accountant=request.user)
+        request.status = 'completed'
+        request.save()
+        return Response({"message": "So‘rov bajarildi", "status": request.status})
 
-
-
-
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        request = get_object_or_404(Request, id=pk, status='pending')
+        request.status = 'rejected'
+        request.save()
+        return Response({"message": "So‘rov rad etildi", "status": request.status})
 
 
 

@@ -117,10 +117,60 @@ class TaxCalculationSerializer(Serializer):
     tax_rate_id = CharField()
 
 
+class ExperienceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Experience
+        fields = '__all__'
+        read_only_fields = ['user']
+
+    def validate(self, data):
+        if data.get('end_date') and data.get('start_date'):
+            if data['end_date'] < data['start_date']:
+                raise serializers.ValidationError("End date must be after start date")
+        return data
+
+
+class ReferenceRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReferenceRequest
+        fields = '__all__'
+
+class ReferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reference
+        fields = '__all__'
 
 
 
+class ChatRoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatRoom
+        fields = "__all__"
 
+class MessageSerializer(serializers.ModelSerializer):
+    sender = serializers.StringRelatedField()
+    file = serializers.FileField(required=False)
+
+    class Meta:
+        model = Message
+        fields = "__all__"
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = "__all__"
+
+
+
+class RequestSerializer(serializers.ModelSerializer):
+    client = serializers.StringRelatedField(read_only=True)
+    accountant = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Request
+        fields = "__all__"
+        read_only_fields = ["client", "status"]
 
 
 

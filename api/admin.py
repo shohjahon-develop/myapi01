@@ -12,6 +12,9 @@ admin.site.register(Invoice)
 admin.site.register(Payment)
 admin.site.register(TaxRate)
 admin.site.register(AboutAccountant)
+admin.site.register(Reference)
+admin.site.register(ReferenceRequest)
+admin.site.register(Experience)
 
 
 

@@ -8,7 +8,6 @@ class User(AbstractUser):
     }
     phone_number = models.CharField(max_length=15, unique=True)
     username = models.CharField(max_length=30, unique=True)
-    experience = models.PositiveIntegerField(null=True, blank=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="customuser")
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'phone_number']

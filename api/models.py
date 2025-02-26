@@ -161,7 +161,7 @@ class TaxRate(models.Model):
 
 
 
-User = get_user_model()
+
 
 class ChatRoom(models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)

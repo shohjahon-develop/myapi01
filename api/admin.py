@@ -15,6 +15,10 @@ admin.site.register(AboutAccountant)
 admin.site.register(Reference)
 admin.site.register(ReferenceRequest)
 admin.site.register(Experience)
+admin.site.register(ChatRoom)
+admin.site.register(Message)
+admin.site.register(Notification)
+admin.site.register(Request)
 
 
 

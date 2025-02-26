@@ -1,5 +1,6 @@
 from requests.models import Request
 from xml import parsers
+from django.contrib.admin import action as admin_action
 from rest_framework.permissions import IsAdminUser
 from django.contrib.admin import action
 from django.http import Http404, HttpResponse
@@ -7,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework import permissions
-
+from rest_framework import viewsets, parsers
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -430,7 +431,7 @@ class ExperienceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    @action(detail=False, methods=['GET'])
+
     def my_experiences(self, request):
         experiences = self.get_queryset()
         serializer = self.get_serializer(experiences, many=True)
@@ -445,7 +446,7 @@ class ReferenceRequestViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
 
-    @action(detail=True, methods=['post'])
+
     def accept(self, request, pk=None):
         reference_request = self.get_object()
         reference_request.is_accepted = True
@@ -571,7 +572,7 @@ class RequestViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(client=self.request.user)
 
-    @action(detail=True, methods=['post'])
+
     def accept(self, request, pk=None):
         request = get_object_or_404(Request, id=pk, status='pending')
         request.accountant = request.user
@@ -579,14 +580,14 @@ class RequestViewSet(viewsets.ModelViewSet):
         request.save()
         return Response({"message": "So‘rov qabul qilindi", "status": request.status})
 
-    @action(detail=True, methods=['post'])
+
     def complete(self, request, pk=None):
         request = get_object_or_404(Request, id=pk, status='accepted', accountant=request.user)
         request.status = 'completed'
         request.save()
         return Response({"message": "So‘rov bajarildi", "status": request.status})
 
-    @action(detail=True, methods=['post'])
+
     def reject(self, request, pk=None):
         request = get_object_or_404(Request, id=pk, status='pending')
         request.status = 'rejected'

@@ -29,7 +29,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(write_only=True)
-    email = serializers.EmailField()
+    phone_number = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True)
 
 class JWTSerializer(serializers.Serializer):

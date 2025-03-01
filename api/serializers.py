@@ -43,6 +43,11 @@ def get_tokens_for_user(user):
         'access': str(refresh.access_token),
     }
 
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
+        read_only_fields = ['client', 'status', 'created_at', 'updated_at']
 
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:

@@ -6,6 +6,7 @@ class User(AbstractUser):
     ROLE_CHOICES = {
         'customuser': 'CustomUser',
         'accountant': 'Accountant',
+        'admin': 'Admin',
     }
     phone_number = models.CharField(max_length=15, unique=True)
     username = models.CharField(max_length=30, unique=True)
@@ -214,9 +215,44 @@ class Request(models.Model):
         return f"{self.title} ({self.status})"
 
 
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled')
+    ]
 
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    full_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20)
+    email = models.EmailField()
 
+    company_name = models.CharField(max_length=255)
+    company_key = models.CharField(max_length=50, unique=True)
+    company_type = models.CharField(max_length=50, choices=[('LLC', 'MChJ'), ('SP', 'XK'), ('JSC', 'AJ')])
+    company_activity = models.CharField(max_length=255)
+    legal_address = models.TextField()
 
+    bank_account = models.CharField(max_length=50, blank=True, null=True)
+    bank_name = models.CharField(max_length=255, blank=True, null=True)
+    bank_mfo = models.CharField(max_length=10, blank=True, null=True)
+    tax_system = models.CharField(max_length=50, choices=[('general', 'Umumiy'), ('simplified', 'Soddalashtirilgan')])
+    is_vat_payer = models.BooleanField(default=False)
+
+    service_type = models.CharField(max_length=255)
+    document_count = models.PositiveIntegerField()
+    order_deadline = models.DateField()
+
+    additional_files = models.FileField(upload_to='orders/', blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.company_name} - {self.service_type} ({self.status})"
 
 
 

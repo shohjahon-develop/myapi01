@@ -595,8 +595,13 @@ class RequestViewSet(viewsets.ModelViewSet):
         return Response({"message": "So‘rov rad etildi", "status": request.status})
 
 
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all().order_by('-created_at')
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
 
 
 

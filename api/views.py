@@ -88,45 +88,22 @@ class AboutViewSet(viewsets.ModelViewSet):
 
 class PasswordResetRequestView(generics.GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
-    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = User.objects.get(phone_number=serializer.validated_data['phone_number'])
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        reset_url = f"http://Accounting.com/reset-password/{uid}/{token}/"
-
-        send_mail(
-            "Password Reset Request",
-            f"Passwordingizni o'zgartirish uchun buyerga bosing: {reset_url}",
-            "no-reply@yourdomain.com",
-            [user.phone_number],
-        )
-        return Response({"message": "Password reset link sent."}, status=status.HTTP_200_OK)
+        serializer.send_reset_email()
+        return Response({"message": "Parolni tiklash uchun email jo‘natildi!"}, status=status.HTTP_200_OK)
 
 
 class PasswordResetConfirmView(generics.GenericAPIView):
     serializer_class = PasswordResetSerializer
-    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        try:
-            uid = urlsafe_base64_decode(serializer.validated_data['uid']).decode()
-            user = User.objects.get(pk=uid)
-            if default_token_generator.check_token(user, serializer.validated_data['token']):
-                user.set_password(serializer.validated_data['new_password'])
-                user.save()
-                return Response({"message": "Password reset successful."}, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
-        except (User.DoesNotExist, ValueError, TypeError):
-            return Response({"error": "Invalid request."}, status=status.HTTP_400_BAD_REQUEST)
-
+        serializer.save()
+        return Response({"message": "Parol muvaffaqiyatli o‘zgartirildi!"}, status=status.HTTP_200_OK)
 
 
 class InvoiceListCreateView(generics.ListCreateAPIView):

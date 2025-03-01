@@ -6,6 +6,11 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from api.models import *
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+
 
 User = get_user_model()
 
@@ -21,7 +26,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username','first_name', 'last_name','phone_number', 'password']
+        fields = ['username','first_name', 'last_name','email','phone_number', 'password']
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -77,19 +82,52 @@ class AboutUsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class PasswordResetRequestSerializer(Serializer):
-    email = EmailField()
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
     def validate_email(self, value):
         if not User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Bunday email bilan user topilmadi!")
+            raise serializers.ValidationError("Bunday email bilan foydalanuvchi topilmadi!")
         return value
 
+    def send_reset_email(self):
+        email = self.validated_data["email"]
+        user = User.objects.get(email=email)
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        reset_url = f"http://yourfrontend.com/password-reset/{uid}/{token}/"
 
-class PasswordResetSerializer(Serializer):
-    uid = CharField()
-    token = CharField()
-    new_password = CharField(write_only=True, min_length=8)
+        send_mail(
+            subject="Parolni tiklash",
+            message=f"Parolingizni tiklash uchun quyidagi linkdan foydalaning: {reset_url}",
+            from_email="mrzaqulovbegzod@gmail.com",
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate(self, data):
+        try:
+            uid = force_str(urlsafe_base64_decode(data["uid"]))
+            user = User.objects.get(pk=uid)
+        except (User.DoesNotExist, ValueError):
+            raise serializers.ValidationError("Noto‘g‘ri yoki eskirgan link!")
+
+        if not default_token_generator.check_token(user, data["token"]):
+            raise serializers.ValidationError("Token noto‘g‘ri yoki eskirgan!")
+
+        return {"user": user, "new_password": data["new_password"]}
+
+    def save(self):
+        user = self.validated_data["user"]
+        user.set_password(self.validated_data["new_password"])
+        user.save()
 
 
 class InvoiceSerializer(ModelSerializer):

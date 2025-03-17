@@ -17,6 +17,7 @@ router.register(r'messages', MessageViewSet)
 router.register(r'notifications', NotificationViewSet)
 router.register(r'requests', RequestViewSet)
 router.register(r'order',OrderViewSet)
+router.register(r'card',CardViewSet)
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),

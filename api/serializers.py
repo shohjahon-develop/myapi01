@@ -65,6 +65,13 @@ class AboutAccountantSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Card
+        fields = '__all__'
+
+
+
 class XizmatlarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Xizmatlar

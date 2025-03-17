@@ -256,10 +256,23 @@ class Order(models.Model):
         return f"{self.company_name} - {self.service_type} ({self.status})"
 
 
+class Card(models.Model):
+    CARDS = (
+        ('6262570125113045', '6262570125113045'),
+        ('3654263263263267', '3654263263263267'),
+    )
 
+    STATUS_CHOICES = (
+        ('boshlandi', 'Boshlandi'),
+        ('tekshirilmoqda', 'Tekshirilmoqda'),
+        ('tugatildi', 'Tugatildi'),
+    )
 
+    card = models.CharField(max_length=16, choices=CARDS)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='boshlandi')
 
-
+    def __str__(self):
+        return f"Card {self.card} - {self.status}"
 
 
 

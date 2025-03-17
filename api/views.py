@@ -46,6 +46,7 @@ class LoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = authenticate(username=serializer.validated_data['username'],
+                            phone_number=serializer.validated_data['phone_number'],
                             password=serializer.validated_data['password'])
         if user:
             tokens = get_tokens_for_user(user)
@@ -71,6 +72,10 @@ def get_videos(request):
 class AboutAccountantViewSet(viewsets.ModelViewSet):
     queryset = AboutAccountant.objects.all()
     serializer_class = AboutAccountantSerializer
+
+class CardViewSet(viewsets.ModelViewSet):
+    queryset = Card.objects.all()
+    serializer_class = CardSerializer
 
 class XizmatlarViewSet(viewsets.ModelViewSet):
     queryset = Xizmatlar.objects.all()

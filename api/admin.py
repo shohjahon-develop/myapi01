@@ -20,6 +20,7 @@ admin.site.register(Message)
 admin.site.register(Notification)
 admin.site.register(Request)
 admin.site.register(Order)
+admin.site.register(Card)
 
 
 

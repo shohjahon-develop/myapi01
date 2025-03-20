@@ -47,7 +47,8 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = authenticate(username=serializer.validated_data['username'],
                             phone_number=serializer.validated_data['phone_number'],
-                            password=serializer.validated_data['password'])
+                            password=serializer.validated_data['password'],
+                            role=serializer.validated_data['role'])
         if user:
             tokens = get_tokens_for_user(user)
             return Response(tokens, status=status.HTTP_200_OK)

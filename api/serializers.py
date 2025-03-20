@@ -36,7 +36,6 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(write_only=True)
     phone_number = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True)
-    role = serializers.CharField(write_only=True)
 
 class JWTSerializer(serializers.Serializer):
     access = serializers.CharField()
